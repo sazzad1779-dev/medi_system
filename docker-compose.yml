@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: prescription_db
+      POSTGRES_USER: rxuser
+      POSTGRES_PASSWORD: rxpassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rxuser -d prescription_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # vLLM Service (Optional: Requires NVIDIA GPU)
+  # vllm:
+  #   image: vllm/vllm-openai:latest
+  #   command: --model Qwen/Qwen2.5-VL-7B-Instruct --port 8001 --max-model-len 4096 --gpu-memory-utilization 0.85 --dtype bfloat16
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+  #   volumes:
+  #     - huggingface_cache:/root/.cache/huggingface
+  #   ports:
+  #     - "8001:8001"
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://rxuser:rxpassword@postgres:5432/prescription_db
+      - VLLM_BASE_URL=http://vllm:8001/v1
+    volumes:
+      - ./uploads:/app/uploads
+      - ./tmp:/app/tmp
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
+  huggingface_cache:
