@@ -27,24 +27,10 @@ Copy the template and fill in your API keys:
 cp .env.example .env
 ```
 
-### 2. Database & API
-Start the core services:
+### 2. Run locally
 ```bash
-docker-compose up -d postgres api
-```
-
-### 3. VLM Service (vLLM)
-If you have a GPU, start vLLM:
-```bash
-docker-compose up -d vllm
-```
-Alternatively, run it manually if not using Docker for the VLM:
-```bash
-python -m vllm.entrypoints.openai.api_server \
-    --model Qwen/Qwen2.5-VL-7B-Instruct \
-    --port 8001 \
-    --max-model-len 4096 \
-    --gpu-memory-utilization 0.85
+uv sync
+uv run uvicorn app.main:app --reload
 ```
 
 ---
